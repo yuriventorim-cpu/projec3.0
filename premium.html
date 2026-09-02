@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoQuest Premium</title>
+    <link rel="stylesheet" href="css/premium.css" />
+  </head>
+  <body class="premium-body">
+    <div class="premium-shell">
+      <header class="premium-topbar">
+        <div class="brand-block">
+          <span class="eyebrow">Gestão urbana sustentável</span>
+          <h1>EcoQuest <span>Premium</span></h1>
+        </div>
+        <div class="header-stats">
+          <div class="stat-pill"><span>🌱</span><strong id="sustStat">50</strong></div>
+          <div class="stat-pill"><span>🪙</span><strong id="coinsStat">500</strong></div>
+          <div class="stat-pill"><span>😊</span><strong id="approvalStat">82%</strong></div>
+          <div class="stat-pill phase-pill"><span>🧭</span><strong id="campaignPhaseLabel">Fase 1</strong></div>
+        </div>
+      </header>
+
+      <main class="dashboard premium-grid">
+        <section class="card city-panel premium-city-panel">
+          <div class="panel-header">
+            <h2>🏙️ Cidade</h2>
+            <span id="stageBadge" class="badge badge-alert">Estágio 1</span>
+          </div>
+
+          <div class="city-visual premium-visual" id="cityScene" aria-live="polite"></div>
+
+          <div class="phase-banner premium-banner" id="phaseBanner">
+            <strong>Fase 1 — Cidade em crise</strong>
+            <span>Aprender o básico da gestão urbana sustentável.</span>
+          </div>
+
+          <div class="city-meta">
+            <div>
+              <label>Rodada</label>
+              <strong id="roundLabel">1</strong>
+            </div>
+            <div>
+              <label>População</label>
+              <strong id="populationLabel">50.000</strong>
+            </div>
+            <div>
+              <label>Qualidade de vida</label>
+              <strong id="lifeQualityLabel">50</strong>
+            </div>
+          </div>
+
+          <div class="city-status">
+            <div>
+              <span>🌳 Natureza</span>
+              <div class="bar"><div id="natureBar" style="width: 50%"></div></div>
+            </div>
+            <div>
+              <span>💧 Água</span>
+              <div class="bar"><div id="waterBar" style="width: 50%"></div></div>
+            </div>
+            <div>
+              <span>⚡ Energia</span>
+              <div class="bar"><div id="energyBar" style="width: 50%"></div></div>
+            </div>
+            <div>
+              <span>♻️ Reciclagem</span>
+              <div class="bar"><div id="recycleBar" style="width: 50%"></div></div>
+            </div>
+            <div>
+              <span>🌫️ Poluição</span>
+              <div class="bar danger"><div id="pollutionBar" style="width: 50%"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side-panel premium-side-panel">
+          <div class="card event-card premium-card">
+            <div class="panel-header">
+              <h3>🎲 Evento atual</h3>
+            </div>
+            <div id="eventBox" class="event-box">
+              <p>Sem evento nesta rodada. A cidade está analisando as próximas escolhas.</p>
+            </div>
+          </div>
+
+          <div class="card mission-card premium-card">
+            <div class="panel-header">
+              <h3>🎯 Missões secretas</h3>
+            </div>
+            <ul id="secretMissionList" class="mission-list"></ul>
+          </div>
+
+          <div class="card social-card premium-card">
+            <div class="panel-header">
+              <h3>💬 EcoSocial</h3>
+            </div>
+            <ul id="socialFeedList" class="social-list"></ul>
+          </div>
+
+          <div class="card log-card premium-card">
+            <div class="panel-header">
+              <h3>📝 Histórico</h3>
+            </div>
+            <ul id="logList" class="log-list"></ul>
+          </div>
+
+          <div class="card ranking-card premium-card">
+            <div class="panel-header">
+              <h3>🏆 Ranking local</h3>
+            </div>
+            <ol id="rankingList" class="ranking-list"></ol>
+          </div>
+        </aside>
+      </main>
+
+      <section class="action-area premium-action-area">
+        <nav class="tab-nav premium-tab-nav" aria-label="Menu do jogo">
+          <button class="tab active" data-panel="cidade">🏙️ Cidade</button>
+          <button class="tab" data-panel="laboratorio">🔬 Laboratório</button>
+          <button class="tab" data-panel="mobilidade">🚲 Mobilidade</button>
+          <button class="tab" data-panel="reciclagem">♻️ Reciclagem</button>
+          <button class="tab" data-panel="animais">🐢 Animais</button>
+          <button class="tab" data-panel="banco">🏦 Banco Verde</button>
+          <button class="tab" data-panel="conquistas">🏆 Conquistas</button>
+        </nav>
+
+        <div class="panels premium-panels">
+          <section class="action-panel active" id="cidade">
+            <div id="cityActions" class="action-grid"></div>
+          </section>
+          <section class="action-panel" id="laboratorio">
+            <div id="labActions" class="action-grid"></div>
+          </section>
+          <section class="action-panel" id="mobilidade">
+            <div id="mobilityActions" class="action-grid"></div>
+          </section>
+          <section class="action-panel" id="reciclagem">
+            <div id="recyclingActions" class="action-grid"></div>
+          </section>
+          <section class="action-panel" id="animais">
+            <div id="animalActions" class="action-grid"></div>
+          </section>
+          <section class="action-panel" id="banco">
+            <div id="bankActions" class="action-grid"></div>
+          </section>
+          <section class="action-panel" id="conquistas">
+            <div id="achievementPanel" class="achievement-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <footer class="toolbar premium-toolbar">
+        <button id="saveBtn" class="secondary-btn">💾 Salvar jogo</button>
+        <button id="continueBtn" class="secondary-btn">🔄 Continuar</button>
+        <button id="newGameBtn" class="danger-btn">🗑️ Novo jogo</button>
+        <button id="nextRoundBtn" class="primary-btn">➡️ Próxima rodada</button>
+        <button id="endMandateBtn" class="secondary-btn">📊 Encerrar mandato</button>
+      </footer>
+    </div>
+
+    <div id="introOverlay" class="intro-overlay">
+      <div class="intro-panel premium-intro-panel">
+        <div class="intro-badge">EcoQuest Premium</div>
+        <h2>Bem-vindo, prefeito(a)</h2>
+        <p class="intro-text">
+          Sua cidade está em transformação. Cada escolha define o futuro, a saúde pública e a prosperidade sustentável do seu município.
+        </p>
+
+        <div class="intro-steps">
+          <div class="intro-step">
+            <span>1</span>
+            <div>
+              <strong>Observe o painel</strong>
+              <p>Natureza, energia, água, reciclagem e aprovação são seu guia.</p>
+            </div>
+          </div>
+          <div class="intro-step">
+            <span>2</span>
+            <div>
+              <strong>Invista com inteligência</strong>
+              <p>Combine desenvolvimento econômico com responsabilidade ambiental.</p>
+            </div>
+          </div>
+          <div class="intro-step">
+            <span>3</span>
+            <div>
+              <strong>Construa uma cidade duradoura</strong>
+              <p>Desbloqueie missões, eventos e conquistas em cada rodada.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="intro-actions">
+          <button id="startGameBtn" class="primary-btn">Começar a jogar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="reportOverlay" class="report-overlay hidden"></div>
+
+    <script src="js/game.js"></script>
+  </body>
+</html>

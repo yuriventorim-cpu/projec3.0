@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoQuest Final Premium</title>
+    <link rel="stylesheet" href="css/premium-final.css" />
+  </head>
+  <body>
+    <div class="final-shell">
+      <header class="final-header">
+        <div>
+          <span class="eyebrow">Versão final premium</span>
+          <h1>EcoQuest <span>Final</span></h1>
+        </div>
+        <div class="header-stats">
+          <div class="pill"><span>🌱</span><strong id="sustStat">50</strong></div>
+          <div class="pill"><span>🪙</span><strong id="coinsStat">500</strong></div>
+          <div class="pill"><span>😊</span><strong id="approvalStat">82%</strong></div>
+          <div class="pill"><span>🧭</span><strong id="campaignPhaseLabel">Fase 1</strong></div>
+        </div>
+      </header>
+
+      <main class="final-grid">
+        <section class="card city-panel">
+          <div class="panel-header">
+            <h2>🏙️ Cidade</h2>
+            <span id="stageBadge" class="badge badge-alert">Estágio 1</span>
+          </div>
+
+          <div class="city-visual" id="cityScene"></div>
+
+          <div class="phase-banner" id="phaseBanner">
+            <strong>Fase 1 — Cidade em crise</strong>
+            <span>Aprender o básico da gestão urbana sustentável.</span>
+          </div>
+
+          <div class="city-meta">
+            <div><label>Rodada</label><strong id="roundLabel">1</strong></div>
+            <div><label>População</label><strong id="populationLabel">50.000</strong></div>
+            <div><label>Qualidade</label><strong id="lifeQualityLabel">50</strong></div>
+          </div>
+
+          <div class="city-status">
+            <div><span>🌳 Natureza</span><div class="bar"><div id="natureBar" style="width:50%"></div></div></div>
+            <div><span>💧 Água</span><div class="bar"><div id="waterBar" style="width:50%"></div></div></div>
+            <div><span>⚡ Energia</span><div class="bar"><div id="energyBar" style="width:50%"></div></div></div>
+            <div><span>♻️ Reciclagem</span><div class="bar"><div id="recycleBar" style="width:50%"></div></div></div>
+            <div><span>🌫️ Poluição</span><div class="bar danger"><div id="pollutionBar" style="width:50%"></div></div></div>
+          </div>
+        </section>
+
+        <aside class="side-panel">
+          <div class="card event-card">
+            <div class="panel-header"><h3>🎲 Evento atual</h3></div>
+            <div id="eventBox" class="event-box"><p>Sem evento nesta rodada.</p></div>
+          </div>
+
+          <div class="card mission-card">
+            <div class="panel-header"><h3>🎯 Missões</h3></div>
+            <ul id="secretMissionList" class="mission-list"></ul>
+          </div>
+
+          <div class="card social-card">
+            <div class="panel-header"><h3>💬 EcoSocial</h3></div>
+            <ul id="socialFeedList" class="social-list"></ul>
+          </div>
+
+          <div class="card log-card">
+            <div class="panel-header"><h3>📝 Histórico</h3></div>
+            <ul id="logList" class="log-list"></ul>
+          </div>
+        </aside>
+      </main>
+
+      <section class="action-area">
+        <nav class="tab-nav">
+          <button class="tab active" data-panel="cidade">🏙️ Cidade</button>
+          <button class="tab" data-panel="laboratorio">🔬 Laboratório</button>
+          <button class="tab" data-panel="mobilidade">🚲 Mobilidade</button>
+          <button class="tab" data-panel="reciclagem">♻️ Reciclagem</button>
+          <button class="tab" data-panel="animais">🐢 Animais</button>
+          <button class="tab" data-panel="banco">🏦 Banco</button>
+          <button class="tab" data-panel="conquistas">🏆 Conquistas</button>
+        </nav>
+
+        <div class="panels">
+          <section class="action-panel active" id="cidade"><div id="cityActions" class="action-grid"></div></section>
+          <section class="action-panel" id="laboratorio"><div id="labActions" class="action-grid"></div></section>
+          <section class="action-panel" id="mobilidade"><div id="mobilityActions" class="action-grid"></div></section>
+          <section class="action-panel" id="reciclagem"><div id="recyclingActions" class="action-grid"></div></section>
+          <section class="action-panel" id="animais"><div id="animalActions" class="action-grid"></div></section>
+          <section class="action-panel" id="banco"><div id="bankActions" class="action-grid"></div></section>
+          <section class="action-panel" id="conquistas"><div id="achievementPanel" class="achievement-list"></div></section>
+        </div>
+      </section>
+
+      <footer class="toolbar">
+        <button id="saveBtn" class="secondary-btn">💾 Salvar</button>
+        <button id="continueBtn" class="secondary-btn">🔄 Continuar</button>
+        <button id="newGameBtn" class="danger-btn">🗑️ Novo jogo</button>
+        <button id="nextRoundBtn" class="primary-btn">➡️ Próxima rodada</button>
+        <button id="endMandateBtn" class="secondary-btn">📊 Encerrar mandato</button>
+      </footer>
+    </div>
+
+    <div id="introOverlay" class="intro-overlay">
+      <div class="intro-panel">
+        <div class="intro-badge">EcoQuest Final</div>
+        <h2>Bem-vindo ao futuro da cidade</h2>
+        <p class="intro-text">
+          Cada decisão afeta a qualidade de vida, o clima, a água e a identidade da cidade. Seu papel é equilibrar crescimento, justiça social e resiliência ambiental.
+        </p>
+        <div class="intro-steps">
+          <div class="intro-step"><span>1</span><div><strong>Entenda o mapa</strong><p>Use o painel para acompanhar os indicadores.</p></div></div>
+          <div class="intro-step"><span>2</span><div><strong>Invista bem</strong><p>Equilibre energia, natureza e mobilidade.</p></div></div>
+          <div class="intro-step"><span>3</span><div><strong>Crie a cidade ideal</strong><p>Desbloqueie missões, eventos e conquistas.</p></div></div>
+        </div>
+        <div class="intro-actions"><button id="startGameBtn" class="primary-btn">Começar</button></div>
+      </div>
+    </div>
+
+    <div id="reportOverlay" class="report-overlay hidden"></div>
+
+    <script src="js/game.js"></script>
+  </body>
+</html>

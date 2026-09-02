@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>EcoQuest: A Cidade em Jogo</title>
+    <link rel="stylesheet" href="css/style.css?v=20260902-map-size" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Gestão urbana sustentável</p>
+          <h1>🌱 ECOQUEST</h1>
+        </div>
+        <div class="header-stats">
+          <div class="stat-pill"><span>🌱</span><strong id="sustStat">50</strong></div>
+          <div class="stat-pill"><span>🪙</span><strong id="coinsStat">500</strong></div>
+          <div class="stat-pill"><span>😊</span><strong id="approvalStat">82%</strong></div>
+          <div class="stat-pill phase-pill"><span>🧭</span><strong id="campaignPhaseLabel">Fase 1</strong></div>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="city-panel card">
+          <div class="panel-header">
+            <h2>🏙️ Cidade</h2>
+            <span id="stageBadge" class="badge badge-alert">Estágio 1</span>
+          </div>
+
+          <div class="city-visual" id="cityScene" aria-live="polite"></div>
+
+          <section class="map-section" aria-labelledby="mapTitle">
+            <div class="map-heading">
+              <div>
+                <p class="section-kicker">Visão geral</p>
+                <h3 id="mapTitle">Mapa da sua cidade</h3>
+              </div>
+              <div class="map-controls">
+                <span class="map-live"><i></i> Ao vivo</span>
+                <button id="futureMapBtn" class="map-toggle" type="button">🔮 Futuro</button>
+                <button id="diagnosisMapBtn" class="map-toggle" type="button">🔍 Diagnóstico</button>
+                <button id="expandMapBtn" class="map-toggle" type="button">↗ Expandir</button>
+              </div>
+            </div>
+            <div id="cityMap" class="city-map" role="img" aria-label="Mapa 2D da cidade"></div>
+            <div class="map-tools" aria-label="Nível de zoom do mapa">
+              <span>Zoom:</span>
+              <button class="zoom-button active" data-map-zoom="city" type="button">🌎 Cidade</button>
+              <button class="zoom-button" data-map-zoom="district" type="button">🏘️ Bairro</button>
+              <button class="zoom-button" data-map-zoom="region" type="button">🏠 Região</button>
+            </div>
+            <div id="mapInspector" class="map-inspector" aria-live="polite"></div>
+            <div class="map-legend" aria-label="Legenda do mapa">
+              <span><i class="legend-status status-good"></i>Bom</span>
+              <span><i class="legend-status status-warn"></i>Atenção</span>
+              <span><i class="legend-status status-bad"></i>Crítico</span>
+              <span><i class="legend-dot nature-dot"></i>Áreas verdes</span>
+              <span><i class="legend-dot water-dot"></i>Água</span>
+              <span><i class="legend-dot energy-dot"></i>Energia limpa</span>
+              <span><i class="legend-dot mobility-dot"></i>Mobilidade</span>
+            </div>
+          </section>
+
+          <div class="phase-banner" id="phaseBanner">
+            <strong>Fase 1 — Cidade em crise</strong>
+            <span>Aprender o básico da gestão urbana sustentável.</span>
+          </div>
+
+          <div class="city-meta">
+            <div>
+              <label>Ano do mandato</label>
+              <strong id="roundLabel">1</strong>
+            </div>
+            <div>
+              <label>População</label>
+              <strong id="populationLabel">50.000</strong>
+            </div>
+            <div>
+              <label>Qualidade de vida</label>
+              <strong id="lifeQualityLabel">50</strong>
+            </div>
+          </div>
+
+          <div class="city-status">
+            <div>
+              <span>🌳 Natureza</span>
+              <div class="bar"><div id="natureBar" style="width: 50%"></div></div>
+            </div>
+            <div>
+              <span>💧 Água</span>
+              <div class="bar"><div id="waterBar" style="width: 50%"></div></div>
+            </div>
+            <div>
+              <span>⚡ Energia</span>
+              <div class="bar"><div id="energyBar" style="width: 50%"></div></div>
+            </div>
+            <div>
+              <span>♻️ Reciclagem</span>
+              <div class="bar"><div id="recycleBar" style="width: 50%"></div></div>
+            </div>
+            <div>
+              <span>🌫️ Poluição</span>
+              <div class="bar danger"><div id="pollutionBar" style="width: 50%"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side-panel">
+          <div class="card event-card">
+            <div class="panel-header">
+              <h3>🎲 Evento atual</h3>
+            </div>
+            <div id="eventBox" class="event-box">
+              <p>Sem evento nesta rodada. A cidade está analisando as próximas escolhas.</p>
+            </div>
+          </div>
+
+          <div class="card mission-card">
+            <div class="panel-header">
+              <h3>🎯 Missões secretas</h3>
+            </div>
+            <ul id="secretMissionList" class="mission-list"></ul>
+          </div>
+
+          <details class="card social-card info-details">
+            <summary>💬 EcoSocial</summary>
+            <ul id="socialFeedList" class="social-list"></ul>
+          </details>
+
+          <details class="card log-card info-details">
+            <summary>📝 Histórico da cidade</summary>
+            <ul id="logList" class="log-list"></ul>
+          </details>
+
+          <details class="card ranking-card info-details">
+            <summary>🏆 Ranking local</summary>
+            <ol id="rankingList" class="ranking-list"></ol>
+          </details>
+        </aside>
+      </main>
+
+      <section class="action-area">
+        <nav class="tab-nav" aria-label="Menu do jogo">
+          <button class="tab active" data-panel="cidade">🏙️ Cidade</button>
+          <button class="tab" data-panel="laboratorio">🔬 Laboratório</button>
+          <button class="tab" data-panel="mobilidade">🚲 Mobilidade</button>
+          <button class="tab" data-panel="reciclagem">♻️ Reciclagem</button>
+          <button class="tab" data-panel="animais">🐢 Animais</button>
+          <button class="tab" data-panel="banco">🏦 Banco Verde</button>
+          <button class="tab" data-panel="referendo">🗳️ Referendo</button>
+          <button class="tab" data-panel="investigacao">📊 Investigação</button>
+          <button class="tab" data-panel="leis">📜 Leis</button>
+          <button class="tab" data-panel="conquistas">🏆 Conquistas</button>
+        </nav>
+
+        <div class="panels">
+          <section class="action-panel active" id="cidade">
+            <div id="cityActions" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="laboratorio">
+            <div id="labActions" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="mobilidade">
+            <div id="mobilityActions" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="reciclagem">
+            <div id="recyclingActions" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="animais">
+            <div id="animalActions" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="banco">
+            <div id="bankActions" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="referendo">
+            <div id="referendumPanel" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="investigacao">
+            <div id="investigacaoPanel" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="leis">
+            <div id="leisPanel" class="action-grid"></div>
+          </section>
+
+          <section class="action-panel" id="conquistas">
+            <div id="achievementPanel" class="achievement-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <footer class="toolbar">
+        <button id="saveBtn" class="secondary-btn">💾 Salvar jogo</button>
+        <button id="continueBtn" class="secondary-btn">🔄 Continuar</button>
+        <button id="newGameBtn" class="danger-btn">🗑️ Novo jogo</button>
+        <button id="nextRoundBtn" class="primary-btn">➡️ Próxima rodada</button>
+        <button id="endMandateBtn" class="secondary-btn">📊 Encerrar mandato</button>
+      </footer>
+    </div>
+
+    <div id="introOverlay" class="intro-overlay">
+      <div class="intro-panel">
+        <div class="intro-badge">EcoQuest</div>
+        <h2>Bem-vindo, prefeito(a)</h2>
+        <p class="intro-text">
+          Sua cidade está em crise, mas cada decisão pode transformar o futuro da população.
+          Equilibre natureza, água, energia e qualidade de vida para construir um futuro sustentável.
+        </p>
+
+        <div class="intro-steps">
+          <div class="intro-step">
+            <span>1</span>
+            <div>
+              <strong>Entenda a cidade</strong>
+              <p>Observe natureza, energia, água, reciclagem e aprovação.</p>
+            </div>
+          </div>
+          <div class="intro-step">
+            <span>2</span>
+            <div>
+              <strong>Escolha com estratégia</strong>
+              <p>Use ações sustentáveis e acompanhe os impactos das próximas rodadas.</p>
+            </div>
+          </div>
+          <div class="intro-step">
+            <span>3</span>
+            <div>
+              <strong>Desbloqueie missões</strong>
+              <p>Complete desafios escondidos e acompanhe eventos inesperados.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="intro-actions">
+          <button id="startGameBtn" class="primary-btn">Começar a jogar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="reportOverlay" class="report-overlay hidden"></div>
+    <div id="futureOverlay" class="report-overlay hidden"></div>
+
+    <script src="js/game.js?v=20260902-map-command"></script>
+  </body>
+</html>
