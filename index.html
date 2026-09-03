@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>EcoQuest: A Cidade em Jogo</title>
-    <link rel="stylesheet" href="css/style.css?v=20260902-map-size" />
+    <link rel="stylesheet" href="css/style.css?v=20260903-map-fix" />
   </head>
   <body>
     <div class="app-shell">
@@ -43,8 +43,25 @@
                 <span class="map-live"><i></i> Ao vivo</span>
                 <button id="futureMapBtn" class="map-toggle" type="button">🔮 Futuro</button>
                 <button id="diagnosisMapBtn" class="map-toggle" type="button">🔍 Diagnóstico</button>
+                <button id="riskMapBtn" class="map-toggle" type="button">🔥 Risco</button>
                 <button id="expandMapBtn" class="map-toggle" type="button">↗ Expandir</button>
               </div>
+            </div>
+            <div class="map-filters" aria-label="Filtros do mapa">
+              <span>Camada:</span>
+              <button class="map-layer active" data-map-layer="political" type="button">🗺️ Político</button>
+              <button class="map-layer" data-map-layer="satellite" type="button">🛰️ Satélite</button>
+              <label class="risk-filter" for="riskMetric">Risco:
+                <select id="riskMetric">
+                  <option value="pollution">🌫️ Poluição</option>
+                  <option value="water">💧 Água</option>
+                  <option value="energy">⚡ Energia</option>
+                  <option value="nature">🌳 Natureza</option>
+                  <option value="mobility">🚗 Mobilidade</option>
+                  <option value="recycling">♻️ Reciclagem</option>
+                  <option value="quality">😊 Qualidade</option>
+                </select>
+              </label>
             </div>
             <div id="cityMap" class="city-map" role="img" aria-label="Mapa 2D da cidade"></div>
             <div class="map-tools" aria-label="Nível de zoom do mapa">
@@ -69,6 +86,8 @@
             <strong>Fase 1 — Cidade em crise</strong>
             <span>Aprender o básico da gestão urbana sustentável.</span>
           </div>
+
+          <div id="decisionFeedback" class="decision-feedback" aria-live="polite"></div>
 
           <div class="city-meta">
             <div>
@@ -144,6 +163,10 @@
       </main>
 
       <section class="action-area">
+        <div class="mini-map-dock">
+          <div class="mini-map-heading"><strong>🧭 Eco-Visão</strong><span>Mapa da cidade</span></div>
+          <div id="miniMap" class="mini-map" aria-label="Minimapa da cidade"></div>
+        </div>
         <nav class="tab-nav" aria-label="Menu do jogo">
           <button class="tab active" data-panel="cidade">🏙️ Cidade</button>
           <button class="tab" data-panel="laboratorio">🔬 Laboratório</button>
@@ -201,6 +224,7 @@
       </section>
 
       <footer class="toolbar">
+        <button id="hintBtn" class="secondary-btn">💡 Dica</button>
         <button id="saveBtn" class="secondary-btn">💾 Salvar jogo</button>
         <button id="continueBtn" class="secondary-btn">🔄 Continuar</button>
         <button id="newGameBtn" class="danger-btn">🗑️ Novo jogo</button>
@@ -210,47 +234,13 @@
     </div>
 
     <div id="introOverlay" class="intro-overlay">
-      <div class="intro-panel">
-        <div class="intro-badge">EcoQuest</div>
-        <h2>Bem-vindo, prefeito(a)</h2>
-        <p class="intro-text">
-          Sua cidade está em crise, mas cada decisão pode transformar o futuro da população.
-          Equilibre natureza, água, energia e qualidade de vida para construir um futuro sustentável.
-        </p>
-
-        <div class="intro-steps">
-          <div class="intro-step">
-            <span>1</span>
-            <div>
-              <strong>Entenda a cidade</strong>
-              <p>Observe natureza, energia, água, reciclagem e aprovação.</p>
-            </div>
-          </div>
-          <div class="intro-step">
-            <span>2</span>
-            <div>
-              <strong>Escolha com estratégia</strong>
-              <p>Use ações sustentáveis e acompanhe os impactos das próximas rodadas.</p>
-            </div>
-          </div>
-          <div class="intro-step">
-            <span>3</span>
-            <div>
-              <strong>Desbloqueie missões</strong>
-              <p>Complete desafios escondidos e acompanhe eventos inesperados.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="intro-actions">
-          <button id="startGameBtn" class="primary-btn">Começar a jogar</button>
-        </div>
-      </div>
+      <div id="tutorialPanel" class="intro-panel"></div>
     </div>
 
     <div id="reportOverlay" class="report-overlay hidden"></div>
     <div id="futureOverlay" class="report-overlay hidden"></div>
+    <div id="hintToast" class="hint-toast" role="status"></div>
 
-    <script src="js/game.js?v=20260902-map-command"></script>
+    <script src="js/game.js?v=20260903-strategy-feed"></script>
   </body>
 </html>

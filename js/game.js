@@ -123,6 +123,15 @@ const newsTemplates = [
   (state) => `📰 Rio da cidade está ${state.water > 80 ? 'revitalizado' : 'ameaçado por poluição'}.`,
 ];
 
+const delayedActionEffects = {
+  industry: { delay: 3, delta: { pollution: 10, water: -6, quality: -4, approval: -3 }, label: 'A poluição industrial começou a afetar a saúde pública.' },
+  greenpark: { delay: 4, delta: { energy: 3, quality: 3 }, label: 'A sombra e a drenagem do parque aliviaram o calor urbano.' },
+  waterplant: { delay: 3, delta: { water: 8, pollution: -3 }, label: 'O tratamento estabilizou o rio e reduziu contaminações.' },
+  solar: { delay: 3, delta: { energy: 8, pollution: -4 }, label: 'A nova geração solar entrou em operação.' },
+  'bike-lane': { delay: 2, delta: { pollution: -5, quality: 3 }, label: 'A mudança no trânsito começou a aparecer nos bairros.' },
+  metro: { delay: 2, delta: { quality: 4, pollution: -6 }, label: 'A rede de metrô passou a absorver viagens de carro.' },
+};
+
 // ========== SPRINT 3: NOVAS FEATURES ==========
 // 🗳️ SISTEMA DE REFERENDO
 const referendumProposals = [
@@ -165,7 +174,113 @@ let futureMapMode = false;
 let diagnosisMapMode = false;
 let expandedMapMode = false;
 let mapZoom = 'city';
+let mapLayer = 'political';
+let riskMapMode = false;
+let riskMetric = 'pollution';
 let selectedMapRegion = null;
+const tutorial = { active: false, step: 0, indicators: new Set() };
+
+const tutorialMetrics = [
+  ['nature', '🌳 Natureza', 'Áreas verdes, árvores e biodiversidade. Melhore com parques e reflorestamento.'],
+  ['water', '💧 Água', 'Qualidade e segurança dos rios e do abastecimento. Melhore com tratamento e captação.'],
+  ['energy', '⚡ Energia', 'Energia limpa e estabilidade da rede. Melhore com painéis solares e baterias.'],
+  ['recycling', '♻️ Reciclagem', 'Quanto do lixo volta para a economia. Melhore com cooperativas e compostagem.'],
+  ['pollution', '🏭 Poluição', 'Pressão sobre o ar e o ambiente. Reduza com transporte limpo e áreas verdes.'],
+  ['mobility', '🚲 Mobilidade', 'Qualidade do deslocamento na cidade. Ciclovias e transporte público reduzem carros.'],
+];
+
+function clearTutorialHighlight() {
+  document.querySelectorAll('.tutorial-target').forEach((element) => element.classList.remove('tutorial-target'));
+}
+
+function highlightTutorialTarget(selector) {
+  clearTutorialHighlight();
+  const target = document.querySelector(selector);
+  if (target) target.classList.add('tutorial-target');
+}
+
+function renderTutorial() {
+  const panel = document.getElementById('tutorialPanel');
+  const overlay = document.getElementById('introOverlay');
+  if (!panel || !overlay) return;
+  overlay.classList.toggle('tutorial-guided', tutorial.step > 0 && tutorial.step < 7);
+  const progress = Math.min(7, tutorial.step + 1);
+  const metrics = tutorialMetrics.map(([id, name, description]) => `
+    <button class="tutorial-metric ${tutorial.indicators.has(id) ? 'is-read' : ''}" data-tutorial-metric="${id}" type="button">
+      <strong>${name}</strong><span>${tutorial.indicators.has(id) ? description : 'Toque para entender'}</span>
+    </button>
+  `).join('');
+  const content = [
+    `<div class="intro-badge">EcoQuest · Tutorial</div><div class="tutorial-progress"><span>Tutorial — 1/7</span><i><b style="width:14%"></b></i></div><h2>Bem-vindo ao EcoQuest!</h2><p class="intro-text">Sua missão é construir uma cidade mais sustentável, equilibrando desenvolvimento, natureza e qualidade de vida.</p><div class="tutorial-tip">Você vai aprender jogando, em poucos passos.</div><div class="intro-actions"><button id="tutorialNextBtn" class="primary-btn">Conhecer o mapa</button></div>`,
+    `<div class="intro-badge">Tutorial · 2/7</div><div class="tutorial-progress"><span>Tutorial — 2/7</span><i><b style="width:28%"></b></i></div><h2>Conheça o mapa</h2><p class="intro-text">Este é o mapa da sua cidade. Ele mostra regiões, problemas e melhorias sem alterar a forma como você já joga.</p><div class="tutorial-tip">🗺️ Use os botões de zoom e abra o Diagnóstico ou o Futuro quando quiser investigar.</div><div class="intro-actions"><button id="tutorialNextBtn" class="primary-btn">Ver indicadores</button></div>`,
+    `<div class="intro-badge">Tutorial · ${progress}/7</div><div class="tutorial-progress"><span>Tutorial — 3/7</span><i><b style="width:42%"></b></i></div><h2>Leia os indicadores</h2><p class="intro-text">Cada indicador conta uma parte da história da cidade. Toque em todos para conhecer o impacto de suas escolhas.</p><div class="tutorial-metrics">${metrics}</div><div class="intro-actions"><button id="tutorialNextBtn" class="primary-btn" ${tutorial.indicators.size < tutorialMetrics.length ? 'disabled' : ''}>Continuar</button></div>`,
+    `<div class="intro-badge">Tutorial · 4/7</div><div class="tutorial-progress"><span>Tutorial — 4/7</span><i><b style="width:57%"></b></i></div><h2>Faça sua primeira decisão</h2><p class="intro-text">A poluição está alta. Vamos aplicar uma melhoria segura para você ver o resultado imediatamente.</p><div class="tutorial-tip">🌳 Um parque reduz a poluição e melhora natureza e qualidade de vida.</div><div class="intro-actions"><button id="tutorialActionBtn" class="primary-btn">Construir parque</button></div>`,
+    `<div class="intro-badge">Tutorial · 5/7</div><div class="tutorial-progress"><span>Tutorial — 5/7</span><i><b style="width:71%"></b></i></div><h2>Veja a consequência</h2><p class="intro-text">Cada decisão altera os indicadores, o dinheiro e a aprovação. O resultado aparecerá no painel verde abaixo do mapa.</p><div class="tutorial-example"><strong>Exemplo</strong><span>🏭 Indústria: economia + · poluição +</span><span>🌳 Parque: natureza + · qualidade +</span></div><div class="intro-actions"><button id="tutorialNextBtn" class="primary-btn">Entendi</button></div>`,
+    `<div class="intro-badge">Tutorial · 6/7</div><div class="tutorial-progress"><span>Tutorial — 6/7</span><i><b style="width:85%"></b></i></div><h2>Investigue os problemas</h2><p class="intro-text">O modo Diagnóstico colore as regiões: verde é saudável, amarelo pede atenção e vermelho exige ação.</p><div class="tutorial-tip">🔍 Você pode ativar esse modo pelo botão do mapa a qualquer momento.</div><div class="intro-actions"><button id="tutorialDiagnosisBtn" class="primary-btn">Testar Diagnóstico</button></div>`,
+    `<div class="intro-badge">Tutorial · 7/7</div><div class="tutorial-progress"><span>Tutorial — 7/7</span><i><b style="width:100%"></b></i></div><h2>Planeje antes de agir</h2><p class="intro-text">Use 🔮 Futuro para simular como a cidade pode ficar em cinco rodadas e tomar decisões melhores.</p><div class="tutorial-tip">A previsão ajuda você a escolher antes de gastar seus recursos.</div><div class="intro-actions"><button id="tutorialFutureBtn" class="primary-btn">Testar Futuro</button></div>`,
+    `<div class="intro-badge">EcoQuest · Pronto!</div><div class="tutorial-progress"><span>Tutorial concluído</span><i><b style="width:100%"></b></i></div><h2>Você está no comando</h2><div class="tutorial-complete">🎉 Parabéns! Você já sabe o básico para administrar sua cidade.</div><div class="intro-actions"><button id="tutorialStartCityBtn" class="primary-btn">Começar minha cidade</button><button id="tutorialRepeatBtn" class="secondary-btn">Repetir tutorial</button><button id="tutorialTipsBtn" class="secondary-btn">Ver dicas</button></div>`,
+  ][tutorial.step];
+  panel.innerHTML = content;
+  const next = document.getElementById('tutorialNextBtn');
+  if (next) next.addEventListener('click', () => { tutorial.step += 1; renderTutorial(); });
+  const action = document.getElementById('tutorialActionBtn');
+  if (action) action.addEventListener('click', () => {
+    const park = actionCatalog.cidade.find((item) => item.id === 'greenpark');
+    tutorial.active = false;
+    executeAction(park);
+    tutorial.active = true;
+    tutorial.step = 4;
+    renderTutorial();
+  });
+  const diagnosis = document.getElementById('tutorialDiagnosisBtn');
+  if (diagnosis) diagnosis.addEventListener('click', () => { diagnosisMapMode = true; renderCityMap(); tutorial.step = 6; renderTutorial(); });
+  const future = document.getElementById('tutorialFutureBtn');
+  if (future) future.addEventListener('click', () => { futureMapMode = true; renderCityMap(); tutorial.step = 7; renderTutorial(); });
+  document.querySelectorAll('[data-tutorial-metric]').forEach((button) => {
+    button.addEventListener('click', () => { tutorial.indicators.add(button.dataset.tutorialMetric); renderTutorial(); });
+  });
+  const start = document.getElementById('tutorialStartCityBtn');
+  if (start) start.addEventListener('click', finishTutorial);
+  const repeat = document.getElementById('tutorialRepeatBtn');
+  if (repeat) repeat.addEventListener('click', startTutorial);
+  const tips = document.getElementById('tutorialTipsBtn');
+  if (tips) tips.addEventListener('click', showHint);
+  const targets = [null, '.city-map', '.city-status', '.action-area', '#decisionFeedback', '#diagnosisMapBtn', '#futureMapBtn', null];
+  if (targets[tutorial.step]) highlightTutorialTarget(targets[tutorial.step]);
+}
+
+function startTutorial() {
+  tutorial.active = true;
+  tutorial.step = 0;
+  tutorial.indicators.clear();
+  state.currentEvent = null;
+  state.modal = null;
+  const overlay = document.getElementById('introOverlay');
+  const reportOverlay = document.getElementById('reportOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+  if (reportOverlay) reportOverlay.classList.add('hidden');
+  renderTutorial();
+}
+
+function finishTutorial() {
+  tutorial.active = false;
+  clearTutorialHighlight();
+  const overlay = document.getElementById('introOverlay');
+  if (overlay) overlay.classList.add('hidden');
+  addLog('🎓 Tutorial concluído: agora você pode administrar a cidade.');
+  triggerRandomEvent();
+  render();
+}
+
+function showHint() {
+  const messages = state.currentEvent ? '💡 Resolva o evento atual antes de avançar a rodada.' : state.pollution > 60 ? '💡 A poluição está alta. Experimente investir em transporte público ou áreas verdes.' : state.water < 50 ? '💡 A água está sob pressão. Tratamento e captação ajudam a cidade.' : '💡 Observe o mapa e escolha uma ação que melhore mais de um indicador.';
+  const toast = document.getElementById('hintToast');
+  if (!toast) return;
+  toast.textContent = messages;
+  toast.classList.add('visible');
+  window.clearTimeout(showHint.timeout);
+  showHint.timeout = window.setTimeout(() => toast.classList.remove('visible'), 4200);
+}
 
 function getCampaignPhase() {
   if (state.infiniteMode) return { name: '♾️ Modo Infinito', title: 'Cidade eterna', goal: 'Sobreviver o maior número de rodadas possível.' };
@@ -225,6 +340,8 @@ function createInitialState() {
     decisionSnapshots: [],
     futureImpact: 0,
     inequality: 50,
+    lastDecision: null,
+    triggeredCascades: [],
   };
 }
 
@@ -256,6 +373,8 @@ function loadState() {
       decisionSnapshots: parsed.decisionSnapshots || [],
       futureImpact: parsed.futureImpact || 0,
       inequality: parsed.inequality || 50,
+      lastDecision: parsed.lastDecision || null,
+      triggeredCascades: parsed.triggeredCascades || [],
     };
   } catch (error) {
     return createInitialState();
@@ -445,6 +564,34 @@ function applyConsequenceChain() {
   });
 }
 
+function applySystemCascades() {
+  const cascades = [
+    { id: 'heat-energy', when: state.nature < 35, delta: { energy: -7 }, message: '🌡️ Pouca área verde elevou a temperatura e o consumo de energia.' },
+    { id: 'energy-health', when: state.energy < 30, delta: { quality: -6, approval: -4 }, message: '🏥 A falta de energia começou a interromper serviços de saúde.' },
+    { id: 'water-health', when: state.water < 30, delta: { quality: -7, approval: -5 }, message: '🚰 A escassez de água reduziu a qualidade de vida nos bairros.' },
+    { id: 'pollution-health', when: state.pollution > 75, delta: { quality: -6, approval: -4 }, message: '😷 A poluição persistente aumentou os gastos e problemas de saúde.' },
+  ];
+  cascades.forEach((cascade) => {
+    if (cascade.when && !state.triggeredCascades.includes(cascade.id)) {
+      state.triggeredCascades.push(cascade.id);
+      applyDelta(cascade.delta);
+      addLog(cascade.message);
+    }
+  });
+}
+
+function getFutureProjection(horizon = 5) {
+  const projection = { nature: state.nature, water: state.water, energy: state.energy, quality: state.quality, pollution: state.pollution, approval: state.approval };
+  const delayed = state.consequenceChain.filter((item) => !item.applied && item.appliedRound <= state.round + horizon);
+  delayed.forEach((item) => Object.entries(item.delta || {}).forEach(([key, value]) => { if (projection[key] !== undefined) projection[key] = clamp(projection[key] + value); }));
+  projection.nature = clamp(projection.nature + (projection.nature < 35 ? -3 : 1));
+  projection.energy = clamp(projection.energy + (projection.nature < 35 ? -7 : 0));
+  projection.quality = clamp(projection.quality + (projection.energy < 30 ? -6 : 0) + (projection.water < 30 ? -7 : 0) + (projection.pollution > 75 ? -6 : 0));
+  projection.approval = clamp(projection.approval + (projection.quality - state.quality) * 0.5);
+  projection.uncertainty = Math.min(18, 5 + state.consequenceChain.filter((item) => !item.applied).length * 2);
+  return projection;
+}
+
 function updateWeather() {
   const weather = weatherSystem[Math.floor(Math.random() * weatherSystem.length)];
   state.currentWeather = weather.type;
@@ -479,8 +626,18 @@ function executeAction(action) {
   if (action.delta) {
     applyDelta(action.delta);
     applyPopulationReaction(action.delta);
-    // Efeito Borboleta: ações têm consequências futuras
-    recordConsequence(action.title, { quality: Math.floor(action.delta.quality / 2) || 0 }, 5);
+    const delayed = delayedActionEffects[action.id];
+    if (delayed) recordConsequence(action.title, delayed.delta, delayed.delay);
+  }
+  state.lastDecision = {
+    title: `${action.title} aplicada`,
+    delta: action.delta || {},
+    money: (action.money || 0) - (action.cost || 0),
+    delayed: delayedActionEffects[action.id] || null,
+  };
+  if (tutorial.active && tutorial.step === 3) {
+    tutorial.step = 4;
+    renderTutorial();
   }
   if (action.transport) updateTransport(action.transport);
   if (action.tech) { if (!state.techs.includes(action.id)) state.techs.push(action.id); }
@@ -496,6 +653,7 @@ function executeAction(action) {
     addLog(`✅ ${action.title}: ${action.description}`);
   }
   trackAction(action.id);
+  publishSocialPost(`${action.title} foi anunciada pela prefeitura. ${action.description}`, action.delta?.pollution > 0 ? 'negativo' : 'positivo');
   checkSecretEventCombos();
   checkAchievements();
   saveState();
@@ -508,7 +666,13 @@ function chooseEventOption(choice) {
   saveDecisionSnapshot();
   if (choice.cost) state.coins -= choice.cost;
   if (choice.delta) { applyDelta(choice.delta); applyPopulationReaction(choice.delta); }
+  state.lastDecision = {
+    title: `${state.currentEvent.title} resolvido`,
+    delta: choice.delta || {},
+    money: -(choice.cost || 0),
+  };
   addLog(`🎲 ${state.currentEvent.title}: ${choice.effectText || choice.text}`);
+  publishSocialPost(`A população reagiu ao evento “${state.currentEvent.title}”: ${choice.text}.`, choice.delta?.quality < 0 ? 'negativo' : 'neutro');
   state.currentEvent = null;
   checkAchievements();
   saveState();
@@ -804,11 +968,12 @@ function calculateTaxIncome(rate = state.taxRate) {
 }
 
 function nextRound() {
-  if (state.modal) return;
+  if (state.modal || state.currentEvent) return;
   state.round += 1;
   resolvePendingProjects();
   updateWeather();
   applyConsequenceChain();
+  applySystemCascades();
   if (state.round % 2 === 0) generateNews();
   triggerRandomEvent();
   updateSustainability();
@@ -851,6 +1016,8 @@ function renderStats() {
   const pollutionBar = document.getElementById('pollutionBar');
   const stageBadge = document.getElementById('stageBadge');
   const phaseBanner = document.getElementById('phaseBanner');
+  const decisionFeedback = document.getElementById('decisionFeedback');
+  const nextRoundBtn = document.getElementById('nextRoundBtn');
 
   if (sustStat) sustStat.textContent = state.sustainability;
   if (coinsStat) coinsStat.textContent = state.coins;
@@ -875,6 +1042,21 @@ function renderStats() {
     const phase = getCampaignPhase();
     const weather = weatherSystem.find(w => w.type === state.currentWeather) || weatherSystem[0];
     phaseBanner.innerHTML = `<strong>${phase.name} — ${phase.title}</strong><span>${phase.goal} | ${weather.emoji} ${weather.name}</span>`;
+  }
+
+  if (decisionFeedback) {
+    const decision = state.lastDecision;
+    const delayedText = decision?.delayed ? ` • ⏳ efeito em ${decision.delayed.delay} rodadas` : '';
+    decisionFeedback.innerHTML = decision
+      ? `<strong>✅ ${decision.title}</strong><span>${formatDelta(decision.delta)}${decision.money ? ` • ${decision.money > 0 ? '+' : ''}${decision.money} moedas` : ''}${delayedText}</span>`
+      : '<span>Escolha uma ação para acompanhar as consequências nesta rodada.</span>';
+    decisionFeedback.classList.toggle('has-decision', Boolean(decision));
+  }
+
+  if (nextRoundBtn) {
+    const waitingForChoice = Boolean(state.currentEvent || state.modal);
+    nextRoundBtn.disabled = waitingForChoice;
+    nextRoundBtn.title = state.currentEvent ? 'Resolva o evento atual antes de avançar' : '';
   }
 
   renderCityScene();
@@ -911,9 +1093,11 @@ function renderCityMap() {
   const s = state;
   const futureMode = futureMapMode;
   const diagnosisMode = diagnosisMapMode;
-  const projectedNature = clamp(s.nature + (s.nature - s.pollution) * 0.12);
-  const projectedPollution = clamp(s.pollution + (s.pollution - s.nature) * 0.12);
-  const projectedWater = clamp(s.water + (s.water - s.pollution) * 0.1);
+  const layer = mapLayer;
+  const forecast = getFutureProjection();
+  const projectedNature = forecast.nature;
+  const projectedPollution = forecast.pollution;
+  const projectedWater = forecast.water;
   const nature = futureMode ? projectedNature : s.nature;
   const pollution = futureMode ? projectedPollution : s.pollution;
   const water = futureMode ? projectedWater : s.water;
@@ -925,39 +1109,67 @@ function renderCityMap() {
   const transportIcon = s.transport.bikes >= s.transport.cars ? '🚲' : s.transport.bus >= s.transport.cars ? '🚌' : '🚗';
   const mapMood = pollution > 70 || water < 35 ? ' map-crisis' : nature > 70 && pollution < 40 ? ' map-thriving' : '';
   const diagnosisClass = diagnosisMode ? ' map-diagnosis' : '';
+  const riskClass = riskMapMode ? ' map-risk' : '';
+  const layerClass = layer === 'satellite' ? ' map-satellite' : '';
   const alert = s.currentEvent
     ? `<span class="map-alert">⚠ ${s.currentEvent.title.replace(/^[^A-Za-zÀ-ÿ]+/u, '')}</span>`
     : pollution > 65 ? '<span class="map-alert">⚠ Qualidade do ar em risco</span>' : water < 40 ? '<span class="map-alert">⚠ Abastecimento sob pressão</span>' : '<span class="map-alert stable">● Cidade estável</span>';
   map.innerHTML = `
-    <div class="map-grid map-zoom-${mapZoom}${mapMood}${futureMode ? ' map-future' : ''}${diagnosisClass}">
-      <div class="map-topline"><b>${futureMode ? 'PREVISÃO · +10 ANOS' : 'VERDÁPOLIS'}</b>${alert}</div>
+    <div class="map-grid brazil-map map-zoom-${mapZoom}${mapMood}${futureMode ? ' map-future' : ''}${diagnosisClass}${riskClass}${layerClass}">
+      <div class="map-topline"><b>${futureMode ? 'SIMULAÇÃO · +5 RODADAS' : 'BRASIL · ECOQUEST'}</b>${futureMode ? `<span class="map-alert">⚠ margem de incerteza ±${forecast.uncertainty}</span>` : alert}</div>
       <div class="map-river" aria-hidden="true"></div>
       <div class="map-road road-one" aria-hidden="true"></div>
       <div class="map-road road-two" aria-hidden="true"></div>
       <div class="map-block block-one" aria-hidden="true"></div><div class="map-block block-two" aria-hidden="true"></div><div class="map-block block-three" aria-hidden="true"></div>
-      <div class="map-district district-north"><span>Zona Norte</span><small>Residencial</small></div>
-      <div class="map-district district-center"><span>Centro</span><small>Comércio e serviços</small></div>
-      <div class="map-district district-south"><span>Zona Sul</span><small>Produção local</small></div>
-      ${renderMapMarker('center-marker', 'quality', '🏙️', 'Centro', s.quality, s.quality < 65)}
+      ${renderBiomes()}
+      ${renderDistrict('residential', 'Bairro Residencial', '🏠', 14, 19, getDistrictValue('residential'))}
+      ${renderDistrict('center', 'Centro', '🏙️', 38, 39, getDistrictValue('center'))}
+      ${renderDistrict('industrial', 'Zona Industrial', '🏭', 72, 20, getDistrictValue('industrial'))}
+      ${renderDistrict('park', 'Parque Verde', '🌳', 17, 71, getDistrictValue('park'))}
+      ${renderDistrict('transport', 'Zona de Transporte', '🚉', 79, 72, getDistrictValue('transport'))}
+      ${renderMapMarker('center-marker', 'quality', '🏙️', 'Centro', futureMode ? forecast.quality : s.quality, s.quality < 65)}
       ${renderMapMarker('water-marker', 'water', '💧', 'Rio Azul', water, water < 65)}
-      ${renderMapMarker('energy-marker', 'energy', '⚡', 'Usina', s.energy, s.energy < 65)}
+      ${renderMapMarker('energy-marker', 'energy', '⚡', 'Usina', futureMode ? forecast.energy : s.energy, s.energy < 65)}
       ${renderMapMarker('mobility-marker', 'mobility', transportIcon, 'Terminal', 100 - s.transport.cars, s.transport.cars > 50)}
       ${renderMapMarker('recycle-marker', 'recycling', '♻️', 'Coleta', s.recycling, s.recycling < 65)}
       ${parks}
     </div>
   `;
-  map.setAttribute('aria-label', `${futureMode ? 'Previsão da cidade em 10 anos' : 'Mapa atual da cidade'}: ${parkCount} áreas verdes, água em ${Math.round(water)} por cento, poluição em ${Math.round(pollution)} por cento.`);
+  map.setAttribute('aria-label', `${futureMode ? 'Previsão da cidade em 5 rodadas' : 'Mapa atual da cidade'}: ${parkCount} áreas verdes, água em ${Math.round(water)} por cento, poluição em ${Math.round(pollution)} por cento.`);
   const futureButton = document.getElementById('futureMapBtn');
   if (futureButton) {
     futureButton.textContent = futureMode ? '↩ Atual' : '🔮 Futuro';
     futureButton.classList.toggle('active', futureMode);
-    futureButton.onclick = () => { futureMapMode = !futureMapMode; renderCityMap(); };
+    futureButton.onclick = () => {
+      futureMapMode = !futureMapMode;
+      if (tutorial.active && tutorial.step === 6) { tutorial.step = 7; renderTutorial(); }
+      renderCityMap();
+    };
   }
   const diagnosisButton = document.getElementById('diagnosisMapBtn');
   if (diagnosisButton) {
     diagnosisButton.textContent = diagnosisMode ? '↩ Mapa' : '🔍 Diagnóstico';
     diagnosisButton.classList.toggle('active', diagnosisMode);
-    diagnosisButton.onclick = () => { diagnosisMapMode = !diagnosisMapMode; renderCityMap(); };
+    diagnosisButton.onclick = () => {
+      diagnosisMapMode = !diagnosisMapMode;
+      if (tutorial.active && tutorial.step === 5) { tutorial.step = 6; renderTutorial(); }
+      renderCityMap();
+    };
+  }
+  const riskButton = document.getElementById('riskMapBtn');
+  if (riskButton) {
+    riskButton.textContent = riskMapMode ? '↩ Risco' : '🔥 Risco';
+    riskButton.classList.toggle('active', riskMapMode);
+    riskButton.onclick = () => { riskMapMode = !riskMapMode; renderCityMap(); };
+  }
+  document.querySelectorAll('.map-layer').forEach((button) => {
+    button.classList.toggle('active', button.dataset.mapLayer === mapLayer);
+    button.onclick = () => { mapLayer = button.dataset.mapLayer; renderCityMap(); };
+  });
+  const riskSelect = document.getElementById('riskMetric');
+  if (riskSelect) {
+    riskSelect.value = riskMetric;
+    riskSelect.onchange = () => { riskMetric = riskSelect.value; riskMapMode = true; renderCityMap(); };
   }
   const expandButton = document.getElementById('expandMapBtn');
   const mapSection = document.querySelector('.map-section');
@@ -971,12 +1183,91 @@ function renderCityMap() {
     button.classList.toggle('active', button.dataset.mapZoom === mapZoom);
     button.onclick = () => { mapZoom = button.dataset.mapZoom; renderCityMap(); };
   });
-  map.querySelectorAll('.map-diagnosis-marker').forEach((marker) => {
-    marker.addEventListener('click', () => showMapDiagnosis(marker.dataset.diagnosis));
+  map.querySelectorAll('.map-diagnosis-marker, .map-district-button, .biome-region').forEach((marker) => {
+    marker.addEventListener('click', () => {
+      if (tutorial.active && tutorial.step === 1) {
+        tutorial.step = 2;
+        renderTutorial();
+        return;
+      }
+      showMapDiagnosis(marker.dataset.diagnosis);
+    });
     marker.addEventListener('click', () => { selectedMapRegion = marker.dataset.diagnosis; renderMapInspector(); });
     marker.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') showMapDiagnosis(marker.dataset.diagnosis); });
   });
   renderMapInspector();
+  renderMiniMap();
+}
+
+function renderBiomes() {
+  const biomes = [
+    ['amazonia', 'Amazônia', '🌳', 28, 18, state.water],
+    ['caatinga', 'Caatinga', '🌵', 67, 18, 100 - state.water],
+    ['cerrado', 'Cerrado', '🌾', 54, 43, state.nature],
+    ['mata-atlantica', 'Mata Atlântica', '🌿', 77, 52, state.quality],
+    ['pantanal', 'Pantanal', '🐊', 33, 61, clamp((state.water + state.nature) / 2)],
+    ['pampa', 'Pampa', '🌱', 49, 83, state.nature],
+  ];
+  return biomes.map(([type, label, icon, left, top, value]) => `
+    <button class="biome-region biome-${type} status-${getDiagnosisStatus(value)}" data-diagnosis="${type}" type="button" style="left:${left}%;top:${top}%" aria-label="${label}, indicador ${Math.round(value)}%">
+      <strong>${icon}</strong><span>${label}</span>
+    </button>
+  `).join('');
+}
+
+function getDistrictValue(type) {
+  const projected = futureMapMode;
+  const nature = projected ? clamp(state.nature + (state.nature - state.pollution) * 0.18) : state.nature;
+  const water = projected ? clamp(state.water + (state.water - state.pollution) * 0.14) : state.water;
+  const quality = projected ? clamp(state.quality + (state.quality - state.pollution) * 0.12) : state.quality;
+  const pollution = projected ? clamp(state.pollution + (state.pollution - state.nature) * 0.22) : state.pollution;
+  const values = {
+    center: quality,
+    residential: clamp((quality + state.approval) / 2),
+    industrial: pollution,
+    park: nature,
+    transport: 100 - state.transport.cars,
+  };
+  return values[type] ?? 50;
+}
+
+function getDistrictStatus(type, value) {
+  if (!riskMapMode) return getDiagnosisStatus(type === 'industrial' ? 100 - value : value);
+  const values = {
+    pollution: type === 'industrial' ? state.pollution : clamp(state.pollution * 0.65),
+    water: state.water,
+    energy: state.energy,
+    nature: state.nature,
+    mobility: type === 'transport' ? getDistrictValue('transport') : clamp(100 - state.transport.cars * 0.35),
+    recycling: state.recycling,
+    quality: type === 'center' || type === 'residential' ? value : state.quality,
+  };
+  const metricValue = values[riskMetric] ?? value;
+  return getDiagnosisStatus(riskMetric === 'pollution' ? 100 - metricValue : metricValue);
+}
+
+function renderDistrict(type, label, icon, left, top, value) {
+  const status = getDistrictStatus(type, value);
+  const diagnosis = type === 'industrial' ? 'industrial' : type;
+  const statusLabel = { good: 'saudável', normal: 'estável', warn: 'atenção', bad: 'crítico' }[status];
+  return `<button class="map-district map-district-button district-${type} status-${status}" data-diagnosis="${diagnosis}" type="button" style="left:${left}%;top:${top}%" aria-label="${label}, estado ${statusLabel}"><strong>${icon}</strong><span>${label}</span><small>${Math.round(value)}%</small></button>`;
+}
+
+function renderMiniMap() {
+  const miniMap = document.getElementById('miniMap');
+  if (!miniMap) return;
+  miniMap.innerHTML = `
+    <div class="mini-map-grid ${state.pollution > 65 ? 'has-crisis' : ''}">
+      <span class="mini-zone mini-residential status-${getDistrictStatus('residential', getDistrictValue('residential'))}">🏠</span>
+      <span class="mini-zone mini-center status-${getDistrictStatus('center', getDistrictValue('center'))}">🏙️</span>
+      <span class="mini-zone mini-industrial status-${getDistrictStatus('industrial', getDistrictValue('industrial'))}">🏭</span>
+      <span class="mini-zone mini-park status-${getDistrictStatus('park', getDistrictValue('park'))}">🌳</span>
+      <span class="mini-zone mini-water status-${getDiagnosisStatus(state.water)}">💧</span>
+      <span class="mini-zone mini-transport status-${getDistrictStatus('transport', getDistrictValue('transport'))}">${state.transport.cars > 50 ? '🚗' : '🚲'}</span>
+      ${state.energy >= 60 ? '<span class="mini-solar">☀️</span>' : ''}
+      ${state.recycling >= 65 ? '<span class="mini-recycle">♻️</span>' : ''}
+    </div>
+  `;
 }
 
 function renderMapInspector() {
@@ -1024,6 +1315,17 @@ function getMapDiagnosis(type) {
     energy: { title: 'Usina solar · Energia limpa', value: state.energy, cause: 'A cidade ainda depende de fontes convencionais em parte do consumo.', solutions: ['Investir em painéis solares', 'Criar baterias urbanas', 'Expandir a micro-rede'] },
     mobility: { title: 'Terminal · Mobilidade', value: 100 - state.transport.cars, cause: 'Muitos moradores ainda dependem de carros particulares.', solutions: ['Construir ciclovias', 'Expandir metrô', 'Criar ônibus elétricos'] },
     recycling: { title: 'Cooperativa · Reciclagem', value: state.recycling, cause: 'A coleta seletiva ainda não alcança todos os bairros.', solutions: ['Ampliar cooperativa', 'Automatizar reciclagem', 'Criar compostagem'] },
+    industrial: { title: 'Zona Industrial · Poluição', value: state.pollution, cause: 'A atividade fabril concentra empregos, mas pressiona o ar e o rio.', solutions: ['Incentivar energia limpa', 'Criar cinturão verde', 'Aplicar lei ambiental'] },
+    residential: { title: 'Bairro Residencial · Bem-estar', value: getDistrictValue('residential'), cause: 'Moradia, serviços e aprovação dos moradores definem a saúde do bairro.', solutions: ['Reformar bairros', 'Criar parques de bairro', 'Melhorar transporte público'] },
+    center: { title: 'Centro · Qualidade de vida', value: state.quality, cause: 'Serviços públicos e moradia ainda não acompanham o crescimento.', solutions: ['Reformar bairros', 'Criar parques de bairro', 'Melhorar transporte público'] },
+    park: { title: 'Parque Verde · Natureza', value: state.nature, cause: 'A cobertura vegetal protege o clima e a biodiversidade da cidade.', solutions: ['Criar parques urbanos', 'Restaurar corredores ecológicos', 'Proteger áreas úmidas'] },
+    transport: { title: 'Zona de Transporte · Mobilidade', value: getDistrictValue('transport'), cause: 'A proporção de carros ainda define o congestionamento e as emissões.', solutions: ['Construir ciclovias', 'Expandir metrô', 'Criar ônibus elétricos'] },
+    amazonia: { title: 'Amazônia · Água e floresta', value: state.water, cause: 'A floresta regula as chuvas e guarda a maior rede hídrica do país.', solutions: ['Proteger áreas verdes', 'Recuperar rios', 'Investir em fiscalização ambiental'] },
+    caatinga: { title: 'Caatinga · Resiliência hídrica', value: 100 - state.water, cause: 'A seca e a pressão sobre a água exigem adaptação e uso eficiente.', solutions: ['Criar reservatórios', 'Economizar água', 'Restaurar áreas nativas'] },
+    cerrado: { title: 'Cerrado · Nascentes', value: state.nature, cause: 'As nascentes do Cerrado sustentam rios e produção em várias regiões.', solutions: ['Reflorestar bacias', 'Proteger nascentes', 'Criar corredores ecológicos'] },
+    'mata-atlantica': { title: 'Mata Atlântica · Cidades costeiras', value: state.quality, cause: 'A urbanização pressiona áreas verdes e aumenta o risco de calor e enchentes.', solutions: ['Criar parques urbanos', 'Ampliar drenagem natural', 'Plantio de árvores'] },
+    pantanal: { title: 'Pantanal · Áreas úmidas', value: clamp((state.water + state.nature) / 2), cause: 'O equilíbrio das áreas úmidas depende da água e da proteção da biodiversidade.', solutions: ['Proteger áreas úmidas', 'Reduzir poluição', 'Monitorar incêndios'] },
+    pampa: { title: 'Pampa · Campos naturais', value: state.nature, cause: 'Os campos naturais ajudam a conservar o solo e a biodiversidade do sul.', solutions: ['Restaurar campos', 'Reduzir erosão', 'Apoiar produção sustentável'] },
   };
   return diagnoses[type];
 }
@@ -1058,6 +1360,7 @@ function formatDelta(delta) {
   if (delta.recycling) items.push(`${delta.recycling > 0 ? '+' : ''}${delta.recycling} Reciclagem`);
   if (delta.quality) items.push(`${delta.quality > 0 ? '+' : ''}${delta.quality} Qualidade`);
   if (delta.pollution) items.push(`${delta.pollution > 0 ? '+' : ''}${delta.pollution} Poluição`);
+  if (delta.approval) items.push(`${delta.approval > 0 ? '+' : ''}${delta.approval} Aprovação`);
   return items.join(' • ');
 }
 
@@ -1251,7 +1554,14 @@ function generateSocialFeed() {
       mood: item.mood,
     }));
 
-  state.socialFeed = selected;
+  state.socialFeed = [...selected, ...(state.socialFeed || [])].slice(0, 8);
+}
+
+function publishSocialPost(text, mood = 'neutro') {
+  state.socialFeed = [
+    { user: 'Prefeitura', text, mood, round: state.round },
+    ...(state.socialFeed || []),
+  ].slice(0, 8);
 }
 
 // ========== SPRINT 3: FUNÇÕES DAS NOVAS FEATURES ==========
@@ -1327,7 +1637,7 @@ function renderSocialFeed() {
   if (!list) return;
   list.innerHTML = (state.socialFeed || []).map((post) => `
     <li class="social-item">
-      <strong>${post.user}</strong>
+      <strong>${post.user}${post.round ? ` · R${post.round}` : ''}</strong>
       <span>${post.text}</span>
     </li>
   `).join('');
@@ -1370,6 +1680,7 @@ function bindControls() {
   const newGameBtn = document.getElementById('newGameBtn');
   const nextRoundBtn = document.getElementById('nextRoundBtn');
   const endMandateBtn = document.getElementById('endMandateBtn');
+  const hintBtn = document.getElementById('hintBtn');
 
   if (saveBtn) saveBtn.addEventListener('click', saveState);
   if (continueBtn) continueBtn.addEventListener('click', () => {
@@ -1387,9 +1698,11 @@ function bindControls() {
     state.currentEvent = null;
     saveState();
     render();
+    startTutorial();
   });
   if (nextRoundBtn) nextRoundBtn.addEventListener('click', nextRound);
   if (endMandateBtn) endMandateBtn.addEventListener('click', showFinalReport);
+  if (hintBtn) hintBtn.addEventListener('click', showHint);
 }
 
 function render() {
@@ -1411,17 +1724,7 @@ if (!state.socialFeed || !state.socialFeed.length) {
 bindTabs();
 bindControls();
 
-const startGameBtn = document.getElementById('startGameBtn');
-if (startGameBtn) {
-  startGameBtn.addEventListener('click', () => {
-    const overlay = document.getElementById('introOverlay');
-    if (overlay) overlay.classList.add('hidden');
-    addLog('🎓 Tutorial: comece com ações pequenas e equilibradas para estabilizar a cidade.');
-    render();
-  });
-}
-
-triggerRandomEvent();
 render();
+startTutorial();
 
 window.addEventListener('beforeunload', () => saveRanking());
